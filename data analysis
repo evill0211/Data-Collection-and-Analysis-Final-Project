@@ -1,0 +1,120 @@
+import re
+from collections import Counter
+import string
+import nltk
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
+from nltk.corpus import stopwords
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+ 
+#defines the list of stop words to be removed
+stop_words = set(stopwords.words("english"))
+ 
+#define the regular expression pattern to match the titles 
+pattern = re.compile(r"\$[0-9,]+")
+ 
+#function to remove stop words and clean the text
+def clean_text(text):
+  text = text.lower()
+  text = "".join([char for char in text if char not in string.punctuation])
+  text = " ".join([word for word in text.split() if word not in stop_words])
+  return text
+ 
+ 
+#function that counts the most common words in the text
+def count_words(text):
+  words = clean_text(text).split()
+  word_counts = Counter(words)
+  return word_counts
+ 
+ 
+#reads the titles from the 1918 and 2020 files
+with open("titles_1918.txt", "r") as f:
+  titles_1918 = f.read().splitlines()
+ 
+ 
+with open("titles_2020.txt", "r") as f:
+  titles_2020 = f.read().splitlines()
+  
+ 
+#counts the most frequent words in the titles for each year
+word_counts_1918 = count_words(" ".join(titles_1918))
+word_counts_2020 = count_words(" ".join(titles_2020))
+ 
+print("******************************")
+ 
+print("\nMost frequent words in 1918\n")
+for word, count in word_counts_1918.most_common(10):
+    print(f"{word}: {count}")
+ 
+print("\n*****************************")
+ 
+print("\nMost frequent words in 2020\n")
+for word, count in word_counts_2020.most_common(10):
+    print(f"{word}: {count}")
+ 
+print("\n*****************************")
+ 
+#calculates the fraction of articles that contain certain words
+keywords = ["flu", "virus", "death"]
+ 
+#counts the number of articles that contain the keywords
+for keyword in keywords:
+  count_1918 = sum(1 for title in titles_1918 if keyword in title)
+  count_2020 = sum(1 for title in titles_2020 if keyword in title)
+  fraction_1918 = count_1918 / len(titles_1918)
+  fraction_2020 = count_2020 / len(titles_2020)
+  print(f"\nFraction of articles containing the word '{keyword}' in 1918: {fraction_1918:.5f}".format(keyword))
+  print(f"\nFraction of articles containing the word '{keyword}' in 2020: {fraction_2020:.5f}".format(keyword))
+  print("-------------------------------")
+ 
+# Find all dollar amounts in the titles
+amounts_1918 = []
+for title in titles_1918:
+  matches = pattern.findall(title)
+  for match in matches:
+    amount = float(match.replace("$", "").replace(",", ""))
+    amounts_1918.append(amount)
+ 
+#prints the dollar amounts for the 1918 titles
+total_1918 = sum(amounts_1918)
+print(f"\nTotal amount of money made in 1918: ${total_1918:,}")
+ 
+print("\n--------------------------")
+ 
+amounts_2020 = []
+for title in titles_2020:
+  matches = pattern.findall(title)
+  for match in matches:
+    amount = float(match.replace("$", "").replace(",", ""))
+    amounts_2020.append(amount)
+ 
+# Calculate the total amount of money made in 2020
+total_2020 = sum(amounts_2020)
+print(f"\nTotal amount of money made in 2020: ${total_2020:,}")
+                         
+ 
+print("\n**************************")
+ 
+analyzer = SentimentIntensityAnalyzer()
+ 
+#empty list for year 1918
+sentiments_1918 = []
+for title in titles_1918:
+  sentiment = analyzer.polarity_scores(title)
+  sentiments_1918.append(sentiment['compound'])
+ 
+ 
+#empty list for year 2020
+sentiments_2020 = []
+for title in titles_2020:
+  sentiment = analyzer.polarity_scores(title)
+  sentiments_2020.append(sentiment['compound'])
+ 
+#calculates the average sentiment for each year
+avg_sentiment_1918 = sum(sentiments_1918) / len(sentiments_1918)
+avg_sentiment_2020 = sum(sentiments_2020) / len(sentiments_2020)
+ 
+#prints the average sentiment for each year
+print("\nAverage sentiment in 1918:{:.3f}".format(avg_sentiment_1918))
+print("\nAverage sentiment in 2020:{:.3f}".format(avg_sentiment_2020))
