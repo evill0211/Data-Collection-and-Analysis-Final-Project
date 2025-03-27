@@ -1,0 +1,26 @@
+import requests
+import json
+
+#defines the API key to access the NY Times API
+API_KEY = "QcYoGJ7kYkbOz4QsAgyTedyAqIl6bZYY"
+
+
+
+dates = [("1918", "10"), ("2020", "10")]
+
+for year, month in dates: 
+  url = f"https://api.nytimes.com/svc/archive/v1/{year}/{month}.json?api-key={API_KEY}"
+  #formats the url for the current year and month
+  response = requests.get(url.format(year, month))
+  #use json.loads function to convert the response to a dictionary
+  data = json.loads(response.text)
+
+  #creates a list called titles which extracts the headlines from the articles retrieved from the NY Times API
+  titles = [article["headline"]["main"] for article in data["response"]["docs"]] 
+
+
+  #this opens a file with the right year and month
+  with open(f"titles_{year}.txt", "w") as file:
+    for title in titles:
+      file.write(title + "\n")
+
